@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf';
-import pdfWorker from 'pdfjs-dist/build/pdf.worker.entry'; // Importação correta
+import pdfWorker from 'pdfjs-dist/build/pdf.worker.entry';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
+
+export const config = {
+  runtime: 'edge', // Melhor compatibilidade com a Vercel
+};
 
 export async function POST(request: Request) {
   try {
@@ -21,13 +25,14 @@ export async function POST(request: Request) {
     const pdf = await loadingTask.promise;
     
     let fullText = '';
-    
+
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
       const textContent = await page.getTextContent();
       const pageText = textContent.items
         .map((item: any) => item.str)
         .join(' ');
+
       fullText += pageText + '\n';
     }
 
