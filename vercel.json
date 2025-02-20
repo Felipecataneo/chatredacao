@@ -3,10 +3,7 @@
       "env": {
         "PKG_CONFIG_PATH": "/usr/lib/pkgconfig"
       }
-    },
-    "engines": {
-    "node": "18.x"
-  }
+    }
 
   }
   
