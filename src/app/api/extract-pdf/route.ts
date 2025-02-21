@@ -1,46 +1,54 @@
 import { NextResponse } from 'next/server';
-import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf';
-import pdfWorker from 'pdfjs-dist/build/pdf.worker.entry';
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 export const config = {
-  runtime: 'edge', // Melhor compatibilidade com a Vercel
+  runtime: 'edge'
 };
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const formData = await request.formData();
+    const formData = await req.formData();
     const pdfFile = formData.get('pdf') as File;
     
     if (!pdfFile) {
       return NextResponse.json(
-        { error: 'No PDF file provided' },
+        { error: 'Nenhum arquivo PDF fornecido' },
         { status: 400 }
       );
     }
 
-    const arrayBuffer = await pdfFile.arrayBuffer();
-    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
-    const pdf = await loadingTask.promise;
-    
-    let fullText = '';
+    // Criar um novo FormData para enviar ao n8n
+    const formDataToSend = new FormData();
+    formDataToSend.append('pdf', pdfFile);
 
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const textContent = await page.getTextContent();
-      const pageText = textContent.items
-        .map((item: any) => item.str)
-        .join(' ');
+    // Enviar para o webhook do n8n
+    const response = await fetch(process.env.N8N_WEBHOOK_URL!, {
+      method: 'POST',
+      body: formDataToSend,
+    });
 
-      fullText += pageText + '\n';
+    if (!response.ok) {
+      throw new Error(`Erro n8n: ${response.statusText}`);
     }
 
-    return NextResponse.json({ text: fullText });
+    const data = await response.json();
+
+    // Verificar se a resposta é um array e tem pelo menos um item
+    if (!Array.isArray(data) || data.length === 0 || !data[0].text) {
+      throw new Error('Resposta do n8n não contém dados válidos');
+    }
+
+    // O campo `text` é uma string JSON, então precisamos fazer `JSON.parse`
+    const parsedText = JSON.parse(data[0].text);
+
+    return NextResponse.json({ 
+      text: parsedText.text, // Agora extraindo corretamente o texto
+      metadata: data[0].metadata || null // Caso tenha metadados
+    });
+
   } catch (error) {
-    console.error('PDF extraction error:', error);
+    console.error('Erro no processamento:', error);
     return NextResponse.json(
-      { error: 'Failed to extract PDF content' },
+      { error: 'Falha ao processar PDF' },
       { status: 500 }
     );
   }

@@ -7,7 +7,7 @@ import {
 } from "@/hooks/use-completion-tools";
 import { ChatComponent } from "./components/chat-component";
 
-const systemPrompt = `Você é um assistente que também possui conhecimento das regras de redação do ENEM, interaja de forma amigável e animada.
+const systemPrompt = `Você é um assistente que também possui conhecimento das regras de redação do ENEM, interaja de forma amigável e animada.Essa redação pode ser copiada no chat mas pode ser anexado pdf.
 
 Você deve avaliar redações considerando as seguintes competências:
 1. Domínio da modalidade escrita formal da língua portuguesa
@@ -16,7 +16,7 @@ Você deve avaliar redações considerando as seguintes competências:
 4. Mecanismos linguísticos para argumentação
 5. Proposta de intervenção
 
-Cada competência é avaliada de 0 a 200 pontos:
+Cada competência é avaliada de 0 a 200 pontos, #importante# podendo ser somente em steps de 40 pontos:
 0 - desclassificado
 40 - precário
 80 - insuficiente
@@ -26,7 +26,7 @@ Cada competência é avaliada de 0 a 200 pontos:
 No final passe a nota total
 `;
 
-const prompt = "Olá! Me ajude em avaliar o pdf que vou anexar";
+const prompt = "";
 
 const toolHandler = {
   async handler(tool: ToolCall) {
@@ -43,13 +43,16 @@ export default function Home() {
   });
 
   return (
-    <main className="flex h-svh">
-      <ChatComponent
-        defaultPrompt={prompt}
-        messages={messages.filter(msg => msg.role !== 'system')}  // Filtra as mensagens do sistema
-        error={error}
-        handleNewMessage={sendMessage}
-      />
+    <main className="flex flex-col min-h-screen">
+      {/* Wrapper para garantir que o conteúdo ocupe o espaço correto */}
+      <div className="flex flex-1 items-center justify-center p-4">
+        <ChatComponent
+          defaultPrompt={prompt}
+          messages={messages.filter(msg => msg.role !== "system")}
+          error={error}
+          handleNewMessage={sendMessage}
+        />
+      </div>
     </main>
   );
 }
